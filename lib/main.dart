@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 
 void main() {
   runApp(MyApp());
@@ -20,13 +22,13 @@ class MyApp extends StatelessWidget {
         // or simply save your changes to "hot reload" in a Flutter IDE).
         // Notice that the counter didn't reset back to zero; the application
         // is not restarted.
-        primarySwatch: Colors.blue,
+        primarySwatch: Colors.green,
         // This makes the visual density adapt to the platform that you run
         // the app on. For desktop platforms, the controls will be smaller and
         // closer together (more dense) than on mobile platforms.
         visualDensity: VisualDensity.adaptivePlatformDensity,
       ),
-      home: MyHomePage(title: 'Home page'),
+      home: MyHomePage(title: 'Avalon App'),
     );
   }
 }
@@ -50,17 +52,21 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
+  final joinCodeController = TextEditingController();
+  final nameController = TextEditingController();
 
-  void _incrementCounter() {
-    setState(() {
-      // This call to setState tells the Flutter framework that something has
-      // changed in this State, which causes it to rerun the build method below
-      // so that the display can reflect the updated values. If we changed
-      // _counter without calling setState(), then the build method would not be
-      // called again, and so nothing would appear to happen.
-      _counter++;
-    });
+  Map<String,String> headers = {
+    'Content-type' : 'application/json', 
+    'Accept': 'application/json',
+  };
+
+  void joinGame() async {
+    print("Sending...");
+    http.Response res = await http.post("http://10.0.0.17:45455/api/services/app/Player/Create", headers: headers, body: json.encode({
+      'name': nameController.text,
+      'joinCode': joinCodeController.text.trim()
+    }));
+    print(res);
   }
 
   @override
@@ -80,38 +86,46 @@ class _MyHomePageState extends State<MyHomePage> {
       body: Center(
         // Center is a layout widget. It takes a single child and positions it
         // in the middle of the parent.
-        child: Column(
-          // Column is also a layout widget. It takes a list of children and
-          // arranges them vertically. By default, it sizes itself to fit its
-          // children horizontally, and tries to be as tall as its parent.
-          //
-          // Invoke "debug painting" (press "p" in the console, choose the
-          // "Toggle Debug Paint" action from the Flutter Inspector in Android
-          // Studio, or the "Toggle Debug Paint" command in Visual Studio Code)
-          // to see the wireframe for each widget.
-          //
-          // Column has various properties to control how it sizes itself and
-          // how it positions its children. Here we use mainAxisAlignment to
-          // center the children vertically; the main axis here is the vertical
-          // axis because Columns are vertical (the cross axis would be
-          // horizontal).
-          mainAxisAlignment: MainAxisAlignment.center,
+        child: Row(
           children: <Widget>[
-            Text(
-              'You have pushed the button this many times:',
+            Expanded(
+              flex: 2, // 20%
+              child: Container(),
             ),
-            Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.headline4,
+            Expanded(
+              flex: 6, // 60%
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: <Widget>[
+                  TextField(
+                    keyboardType: TextInputType.number,
+                    controller: joinCodeController,
+                    decoration: const InputDecoration(
+                      labelText: 'Game Code'
+                    )
+                  ),
+                  TextField(
+                    controller: nameController,
+                    decoration: const InputDecoration(
+                      labelText: 'Name'
+                    )
+                  ),
+                  RaisedButton(
+                    onPressed: () {
+                      joinGame();
+                    },
+                    child: Text('Join Game'),
+                  )
+                ],
+              ),
             ),
-          ],
+            Expanded(
+              flex: 2, // 20%
+              child: Container(),
+            )
+          ]
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: Icon(Icons.add),
-      ), // This trailing comma makes auto-formatting nicer for build methods.
     );
   }
 }
