@@ -1,10 +1,44 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'package:signalr_client/signalr_client.dart';
 
 void main() {
   runApp(MyApp());
 }
+
+class Game {
+  String id;
+  String joinCode;
+  List<Player> players;
+  int status;
+
+  Game.fromJson(Map<String, dynamic> json) 
+    : id = json['id'],
+    joinCode = json['joinCode'],
+    players = createPlayers(json['players']),
+    status = json['status'];
+
+}
+
+class Player {
+  String id;
+  String name;
+  int role;
+
+  Player(this.id, this.name, this.role);
+}
+
+List<Player> createPlayers(List<dynamic> players) {
+  List<Player> l = new List();
+  players.forEach((p) {
+    Player pl = new Player(p["id"], p["name"], p["role"]);
+    l.add(pl);
+  });
+  return l;
+}
+
+final serverUrl = "http://10.0.0.17:45455/gameHub";
 
 class MyApp extends StatelessWidget {
   // This widget is the root of your application.
@@ -54,6 +88,9 @@ class MyHomePage extends StatefulWidget {
 class _MyHomePageState extends State<MyHomePage> {
   final joinCodeController = TextEditingController();
   final nameController = TextEditingController();
+  final socket = HubConnectionBuilder().withUrl(serverUrl).build();
+  Game g;
+
 
   Map<String,String> headers = {
     'Content-type' : 'application/json', 
@@ -61,13 +98,21 @@ class _MyHomePageState extends State<MyHomePage> {
   };
 
   void joinGame() async {
-    print("Sending...");
-    http.Response res = await http.post("http://10.0.0.17:45455/api/services/app/Player/Create", headers: headers, body: json.encode({
+    http.Response res = await -http.post("http://10.0.0.17:45455/api/services/app/Player/Create", headers: headers, body: json.encode({
       'name': nameController.text,
       'joinCode': joinCodeController.text.trim()
     }));
-    print(res);
+    Map<String, dynamic> r = jsonDecode(res.body);
+    g = new Game.fromJson(r["result"]);
+    if(socket.state == HubConnectionState.Disconnected) await socket.start();
+    await socket.invoke("JoinGameGroup", args: <Object>[g.id]);
+
+    socket.on("GameUpdated", (args) {
+      print("Fikk svar tilbake");
+     });
   }
+
+
 
   @override
   Widget build(BuildContext context) {

@@ -24,6 +24,7 @@ dependencies:
   flutter:
     sdk: flutter
   http: ^0.12.1
+  signalr_client: ^0.1.6
 
 
   # The following adds the Cupertino Icons font to your application.
